@@ -1,0 +1,17 @@
+{
+  "name": "debate-backend",
+  "version": "1.0.0",
+  "description": "Debate platform backend with Socket.IO and FastAPI integration",
+  "main": "server.cjs",
+  "scripts": {
+    "start": "node server.cjs",
+    "dev": "nodemon server.cjs"
+  },
+  "dependencies": {
+    "socket.io": "^4.7.4",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

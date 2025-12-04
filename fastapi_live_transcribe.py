@@ -20,88 +20,88 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Grok AI configuration
-GROK_API_KEY = os.getenv("GROK_API_KEY", "your-grok-api-key-here")
-GROK_API_URL = "https://api.x.ai/v1/chat/completions"
+# # Grok AI configuration
+# GROK_API_KEY = os.getenv("GROK_API_KEY", "your-grok-api-key-here")
+# GROK_API_URL = "https://api.x.ai/v1/chat/completions"
 
-async def score_debate_text(text: str) -> dict:
-    """Score debate performance using Grok AI."""
-    try:
-        prompt = f"""
-        Analyze this debate segment and provide scoring on a scale of 1-10 for each category:
+# async def score_debate_text(text: str) -> dict:
+#     """Score debate performance using Grok AI."""
+#     try:
+#         prompt = f"""
+#         Analyze this debate segment and provide scoring on a scale of 1-10 for each category:
         
-        Text: "{text}"
+#         Text: "{text}"
         
-        Please evaluate:
-        1. Clarity (how clear and understandable the argument is)
-        2. Logic (logical flow and reasoning)
-        3. Evidence (use of facts, examples, or support)
-        4. Persuasiveness (convincing power)
-        5. Delivery (speaking style and confidence)
+#         Please evaluate:
+#         1. Clarity (how clear and understandable the argument is)
+#         2. Logic (logical flow and reasoning)
+#         3. Evidence (use of facts, examples, or support)
+#         4. Persuasiveness (convincing power)
+#         5. Delivery (speaking style and confidence)
         
-        Respond in JSON format:
-        {{
-            "clarity": score,
-            "logic": score,
-            "evidence": score,
-            "persuasiveness": score,
-            "delivery": score,
-            "overall_score": average,
-            "feedback": "brief constructive feedback"
-        }}
-        """
+#         Respond in JSON format:
+#         {{
+#             "clarity": score,
+#             "logic": score,
+#             "evidence": score,
+#             "persuasiveness": score,
+#             "delivery": score,
+#             "overall_score": average,
+#             "feedback": "brief constructive feedback"
+#         }}
+#         """
         
-        headers = {
-            "Authorization": f"Bearer {GROK_API_KEY}",
-            "Content-Type": "application/json"
-        }
+#         headers = {
+#             "Authorization": f"Bearer {GROK_API_KEY}",
+#             "Content-Type": "application/json"
+#         }
         
-        payload = {
-            "messages": [
-                {"role": "system", "content": "You are an expert debate judge. Analyze debate performance objectively and provide constructive feedback."},
-                {"role": "user", "content": prompt}
-            ],
-            "model": "grok-beta",
-            "temperature": 0.3
-        }
+#         payload = {
+#             "messages": [
+#                 {"role": "system", "content": "You are an expert debate judge. Analyze debate performance objectively and provide constructive feedback."},
+#                 {"role": "user", "content": prompt}
+#             ],
+#             "model": "grok-beta",
+#             "temperature": 0.3
+#         }
         
-        async with httpx.AsyncClient() as client:
-            response = await client.post(GROK_API_URL, headers=headers, json=payload, timeout=30.0)
+#         async with httpx.AsyncClient() as client:
+#             response = await client.post(GROK_API_URL, headers=headers, json=payload, timeout=30.0)
             
-            if response.status_code == 200:
-                result = response.json()
-                grok_response = result["choices"][0]["message"]["content"]
+#             if response.status_code == 200:
+#                 result = response.json()
+#                 grok_response = result["choices"][0]["message"]["content"]
                 
-                import json
-                try:
-                    start = grok_response.find('{')
-                    end = grok_response.rfind('}') + 1
-                    if start >= 0 and end > start:
-                        json_str = grok_response[start:end]
-                        return json.loads(json_str)
-                except:
-                    pass
+#                 import json
+#                 try:
+#                     start = grok_response.find('{')
+#                     end = grok_response.rfind('}') + 1
+#                     if start >= 0 and end > start:
+#                         json_str = grok_response[start:end]
+#                         return json.loads(json_str)
+#                 except:
+#                     pass
                 
-                return {
-                    "clarity": 7,
-                    "logic": 7,
-                    "evidence": 6,
-                    "persuasiveness": 7,
-                    "delivery": 7,
-                    "overall_score": 6.8,
-                    "feedback": "Analysis in progress - please check your Grok API configuration"
-                }
-            else:
-                return {
-                    "error": f"Grok API error: {response.status_code}",
-                    "message": "Please check your API key and try again"
-                }
+#                 return {
+#                     "clarity": 7,
+#                     "logic": 7,
+#                     "evidence": 6,
+#                     "persuasiveness": 7,
+#                     "delivery": 7,
+#                     "overall_score": 6.8,
+#                     "feedback": "Analysis in progress - please check your Grok API configuration"
+#                 }
+#             else:
+#                 return {
+#                     "error": f"Grok API error: {response.status_code}",
+#                     "message": "Please check your API key and try again"
+#                 }
                 
-    except Exception as e:
-        return {
-            "error": f"Scoring error: {str(e)}",
-            "message": "Unable to score at this time"
-        }
+#     except Exception as e:
+#         return {
+#             "error": f"Scoring error: {str(e)}",
+#             "message": "Unable to score at this time"
+#         }
 
 
 @app.websocket('/ws/transcript')
@@ -181,6 +181,7 @@ async def debate_scoring_endpoint(websocket: WebSocket):
             
             audio_chunk = np.frombuffer(data, dtype=np.int16)
             sample_buffer.extend(audio_chunk)
+            print(f"[DEBUG] Debate endpoint received {len(audio_chunk)} audio samples, buffer size: {len(sample_buffer)}")
             
             if len(sample_buffer) >= samples_per_window:
                 window_samples = np.array(sample_buffer[:samples_per_window], dtype=np.float32)
@@ -200,15 +201,14 @@ async def debate_scoring_endpoint(websocket: WebSocket):
                 )
                 
                 if text:
-                    scores = await score_debate_text(text)
-                    
+                    # Send transcript without AI scoring (since it's commented out)
                     response = {
                         "text": text,
-                        "scores": scores,
                         "timestamp": asyncio.get_event_loop().time()
                     }
                     
                     await websocket.send_json(response)
+                    print(f"[DEBUG] Sent transcript: {text}")  # Debug log
                 
     except WebSocketDisconnect:
         pass
@@ -245,5 +245,5 @@ async def root():
         },
         "health_check": "/health",
         "docs": "/docs",
-        "grok_ai_enabled": bool(GROK_API_KEY and GROK_API_KEY != "your-grok-api-key-here")
+        # "grok_ai_enabled": bool(GROK_API_KEY and GROK_API_KEY != "your-grok-api-key-here")
     }
