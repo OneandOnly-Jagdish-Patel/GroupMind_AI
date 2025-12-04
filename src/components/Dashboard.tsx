@@ -39,35 +39,45 @@ const Dashboard = ({ userName }: DashboardProps) => {
   };
 
   const joinAsDebater = (id: string) => {
-    setDebates((prev) => {
-      const updated = prev.map((d) => {
+    // First check if room is full
+    const currentDebate = debates.find(d => d.id === id);
+    if (!currentDebate || currentDebate.debaters >= 2) return;
+
+    // Update state
+    setDebates((prev) => 
+      prev.map((d) => {
         if (d.id !== id) return d;
         if (d.debaters >= 2) return d;
         return { ...d, debaters: d.debaters + 1 };
-      });
-      const selected = updated.find((d) => d.id === id);
-      if (selected && selected.debaters <= 2) {
-        const role = selected.debaters === 1 ? "debater_A" : "debater_B";
-        navigate(`/debate/${id}`, {
-          state: { debate: selected, role }
-        });
-      }
-      return updated;
+      })
+    );
+
+    // Navigate after state update (outside the setState)
+    const updatedDebaters = currentDebate.debaters + 1;
+    const role = updatedDebaters === 1 ? "debater_A" : "debater_B";
+    const updatedDebate = { ...currentDebate, debaters: updatedDebaters };
+    
+    navigate(`/debate/${id}`, {
+      state: { debate: updatedDebate, role }
     });
   };
 
   const joinAsSpectator = (id: string) => {
-    setDebates((prev) => {
-      const updated = prev.map((d) =>
+    const currentDebate = debates.find(d => d.id === id);
+    if (!currentDebate) return;
+
+    // Update state
+    setDebates((prev) =>
+      prev.map((d) =>
         d.id === id ? { ...d, spectators: d.spectators + 1 } : d
-      );
-      const selected = updated.find((d) => d.id === id);
-      if (selected) {
-        navigate(`/debate/${id}`, {
-          state: { debate: selected, role: "spectator" }
-        });
-      }
-      return updated;
+      )
+    );
+
+    // Navigate after state update (outside the setState)
+    const updatedDebate = { ...currentDebate, spectators: currentDebate.spectators + 1 };
+    
+    navigate(`/debate/${id}`, {
+      state: { debate: updatedDebate, role: "spectator" }
     });
   };
 

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎤 Microphone Permission Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .status { background: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        .instructions { background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎤 Microphone Permission Troubleshooter</h1>
+    
+    <div class="instructions">
+        <h3>📋 Before testing:</h3>
+        <ol>
+            <li><strong>Chrome/Edge:</strong> Go to <code>chrome://settings/content/microphone</code> and make sure <code>localhost</code> is allowed</li>
+            <li><strong>Safari:</strong> Go to Safari > Settings > Websites > Microphone and allow access</li>
+            <li><strong>Firefox:</strong> Click the 🔒 lock icon in address bar and allow microphone</li>
+            <li><strong>Make sure no other apps are using your microphone</strong></li>
+        </ol>
+    </div>
+
+    <div id="status" class="status">Ready to test microphone access...</div>
+    
+    <button onclick="testMicAccess()">🎤 Test Microphone Access</button>
+    <button onclick="testFullPipeline()" id="fullTestBtn" disabled>🚀 Test Full Pipeline</button>
+
+    <div id="details" style="margin-top: 20px;"></div>
+
+    <script>
+        async function testMicAccess() {
+            const statusDiv = document.getElementById('status');
+            const detailsDiv = document.getElementById('details');
+            
+            try {
+                statusDiv.textContent = '🔍 Checking microphone access...';
+                statusDiv.className = 'status';
+                
+                // Check if getUserMedia is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('getUserMedia is not supported in this browser');
+                }
+                
+                console.log('🔍 Requesting microphone access...');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        sampleRate: 16000,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                });
+                
+                console.log('✅ Microphone access granted!', stream);
+                
+                // Test audio processing
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                
+                statusDiv.textContent = '✅ Microphone access granted! Audio processing ready.';
+                statusDiv.className = 'status success';
+                
+                detailsDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Microphone Test Passed!</h4>
+                        <ul>
+                            <li><strong>Stream ID:</strong> ${stream.id}</li>
+                            <li><strong>Audio Tracks:</strong> ${stream.getAudioTracks().length}</li>
+                            <li><strong>Sample Rate:</strong> ${audioContext.sampleRate} Hz</li>
+                            <li><strong>Audio Context State:</strong> ${audioContext.state}</li>
+                        </ul>
+                        <p>🎉 Your microphone is working! You can now test the full pipeline.</p>
+                    </div>
+                `;
+                
+                document.getElementById('fullTestBtn').disabled = false;
+                
+                // Clean up
+                stream.getTracks().forEach(track => track.stop());
+                audioContext.close();
+                
+            } catch (error) {
+                console.error('❌ Microphone error:', error);
+                
+                statusDiv.textContent = `❌ Microphone access denied: ${error.message}`;
+                statusDiv.className = 'status error';
+                
+                let solution = '';
+                if (error.name === 'NotAllowedError') {
+                    solution = `
+                        <h4>🔧 Solution for Permission Denied:</h4>
+                        <ol>
+                            <li>Click the 🔒 lock icon in your browser's address bar</li>
+                            <li>Set microphone permission to "Allow"</li>
+                            <li>Refresh the page and try again</li>
+                        </ol>
+                        <p><strong>Or try:</strong></p>
+                        <ul>
+                            <li><strong>Chrome:</strong> Go to <code>chrome://settings/content/microphone</code></li>
+                            <li><strong>Firefox:</strong> Go to <code>about:preferences#privacy</code> → Permissions → Microphone</li>
+                            <li><strong>Safari:</strong> Safari → Settings → Websites → Microphone</li>
+                        </ul>
+                    `;
+                } else if (error.name === 'NotFoundError') {
+                    solution = `
+                        <h4>🔧 Solution for No Microphone Found:</h4>
+                        <ul>
+                            <li>Make sure your microphone is connected</li>
+                            <li>Check System Preferences → Sound → Input</li>
+                            <li>Try a different microphone or headset</li>
+                        </ul>
+                    `;
+                } else {
+                    solution = `
+                        <h4>🔧 General Troubleshooting:</h4>
+                        <ul>
+                            <li>Try refreshing the page</li>
+                            <li>Close other applications using the microphone</li>
+                            <li>Try a different browser</li>
+                            <li>Check if you're on HTTPS or localhost</li>
+                        </ul>
+                    `;
+                }
+                
+                detailsDiv.innerHTML = `<div class="error">${solution}</div>`;
+            }
+        }
+
+        function testFullPipeline() {
+            // Redirect to the full integration test
+            window.location.href = '/test-integration.html';
+        }
+
+        // Show current page info
+        document.addEventListener('DOMContentLoaded', () => {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            
+            console.log(`📍 Current URL: ${window.location.href}`);
+            console.log(`🔒 Protocol: ${protocol}`);
+            console.log(`🌐 Hostname: ${hostname}`);
+            
+            if (protocol !== 'https:' && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+                document.getElementById('status').innerHTML = 
+                    '⚠️ Warning: Microphone access requires HTTPS or localhost. You may need to use localhost:9000';
+                document.getElementById('status').className = 'status warning';
+            }
+        });
+    </script>
+</body>
+</html>
