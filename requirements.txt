@@ -1,0 +1,17 @@
+# Core FastAPI and WebSocket dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# HTTP client for Grok AI integration
+httpx==0.25.2
+
+# Machine Learning and Audio Processing
+transformers==4.35.2
+torch>=2.0.0
+numpy>=1.24.0
+
+# Optional: GPU support (uncomment if using CUDA)
+# torch-audio>=2.0.0
+
+# Development (optional)
+python-multipart==0.0.6
